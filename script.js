@@ -1,98 +1,68 @@
-const outputDiv = document.getElementById("output");
-const input = document.getElementById("userInput");
-let mensajes = [];
-let escenarioCargado = false;
+// Asegúrate de que dotenv esté cargado si es en desarrollo local (no necesario en Vercel)
+require('dotenv').config();
 
-const instruccionesBase = `Sos un simulador de escenarios para que líderes de proyectos practiquen la toma de decisiones. No respondas como asistente ni brindes explicaciones fuera del marco del juego.
-[PEGAR TODAS LAS INSTRUCCIONES AQUÍ]`;
+// Recuperar la clave de la API desde la variable de entorno
+const openaiApiKey = process.env.TU_API_KEY;
 
-mensajes.push({
-  role: "system",
-  content: instruccionesBase
-});
+if (!openaiApiKey) {
+  console.error('No se encontró la clave API de OpenAI.');
+  process.exit(1);  // Salir si la clave no está presente
+}
 
-mensajes.push({
-  role: "assistant",
-  content: "Simulador: Estoy listo. Por favor, cargá el documento del escenario para comenzar."
-});
+// Configura el endpoint de la API de OpenAI
+const openaiEndpoint = 'https://api.openai.com/v1/completions';
 
-// Leer el archivo .md cargado
-function cargarEscenario() {
-  const fileInput = document.getElementById("fileInput");
-  const archivo = fileInput.files[0];
-  if (!archivo) {
-    alert("Por favor seleccioná un archivo .md");
-    return;
-  }
-
-  const lector = new FileReader();
-  lector.onload = function (e) {
-    const contenido = e.target.result;
-
-    // Agregar el escenario como mensaje del usuario
-    mensajes.push({
-      role: "user",
-      content: `Este es el escenario cargado:\n\n${contenido}`
+// Función para interactuar con OpenAI
+async function callOpenAI(prompt) {
+  try {
+    const response = await fetch(openaiEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openaiApiKey}`,  // Agrega la API Key al header
+      },
+      body: JSON.stringify({
+        model: 'text-davinci-003',  // Puedes cambiar al modelo que prefieras
+        prompt: prompt,             // El mensaje o prompt para enviar a la API
+        max_tokens: 150,            // Ajusta el número de tokens según el tamaño de la respuesta que quieras
+        temperature: 0.7,           // Ajusta la creatividad de las respuestas
+      }),
     });
 
-    outputDiv.innerHTML += `\n\nEscenario cargado. Iniciando simulación...`;
-
-    // Enviar el contenido al modelo
-    iniciarSimulacion();
-    escenarioCargado = true;
-  };
-
-  lector.readAsText(archivo);
-}
-
-async function iniciarSimulacion() {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer TU_API_KEY"
-    },
-    body: JSON.stringify({
-      model: "gpt-4-turbo",
-      messages: mensajes,
-      temperature: 0.7
-    })
-  });
-
-  const data = await response.json();
-  const reply = data.choices[0].message.content;
-  mensajes.push({ role: "assistant", content: reply });
-  outputDiv.innerHTML += `\n\n${reply}`;
-}
-
-async function enviarMensaje() {
-  if (!escenarioCargado) {
-    alert("Primero cargá un escenario .md para comenzar.");
-    return;
+    // Si la respuesta es exitosa, obtenemos los datos
+    if (response.ok) {
+      const data = await response.json();
+      return data.choices[0].text.trim();  // Devuelve el texto generado por OpenAI
+    } else {
+      const errorData = await response.json();
+      console.error('Error de la API de OpenAI:', errorData);
+      return 'Hubo un error con la solicitud a la API.';
+    }
+  } catch (error) {
+    console.error('Error al hacer la solicitud:', error);
+    return 'Hubo un error al conectar con la API.';
   }
-
-  const userMensaje = input.value;
-  if (!userMensaje.trim()) return;
-
-  mensajes.push({ role: "user", content: userMensaje });
-  outputDiv.innerHTML += `\n\nParticipante: ${userMensaje}`;
-  input.value = "";
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer TU_API_KEY"
-    },
-    body: JSON.stringify({
-      model: "gpt-4-turbo",
-      messages: mensajes,
-      temperature: 0.7
-    })
-  });
-
-  const data = await response.json();
-  const reply = data.choices[0].message.content;
-  mensajes.push({ role: "assistant", content: reply });
-  outputDiv.innerHTML += `\n\n${reply}`;
 }
+
+// Inicia el simulador con un mensaje introductorio
+async function iniciarSimulador() {
+  let turno = 1;
+  let contexto = "Estás iniciando un proyecto de marketing digital. ¿Qué decisión tomarás?";
+  
+  // Imprime el primer turno
+  console.log(`TURNO ${turno}: ${contexto}`);
+  
+  // Llamada a OpenAI para obtener una respuesta basada en el contexto
+  const respuesta = await callOpenAI(contexto);
+  
+  console.log('Respuesta del simulador:', respuesta);
+
+  // Aquí puedes agregar el código para que el simulador interactúe con el jugador
+  // por ejemplo, mostrándole las opciones numeradas y pidiéndole que elija una
+  // Y luego usar la respuesta de OpenAI para definir qué sucederá en el siguiente turno
+
+  // En este caso, solo estamos mostrando cómo OpenAI puede generar respuestas dinámicas
+  // usando el contexto dado.
+}
+
+iniciarSimulador();
