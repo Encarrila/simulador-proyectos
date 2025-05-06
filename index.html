@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Simulador de Escenarios de Proyecto</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; background: #f4f4f4; }
+    textarea, input[type="file"] { width: 100%; margin-bottom: 10px; }
+    textarea { height: 100px; }
+    #output { white-space: pre-wrap; background: #fff; padding: 15px; border-radius: 5px; min-height: 150px; }
+    button { padding: 10px 20px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Simulador de Escenarios de Proyecto</h1>
+
+  <input type="file" id="fileInput" accept=".md" />
+  <button onclick="cargarEscenario()">Cargar Escenario</button>
+
+  <div id="output">Simulador: Estoy listo. Por favor, cargá el documento del escenario para comenzar.</div>
+
+  <textarea id="userInput" placeholder="Escribí tu respuesta aquí..."></textarea>
+  <button onclick="enviarMensaje()">Enviar</button>
+
+  <script src="script.js"></script>
+</body>
+</html>
